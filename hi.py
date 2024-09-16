@@ -22,7 +22,6 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Display Image Example')
 font = pygame.font.Font('freesansbold.ttf', 32)
 
-text = font.render('GeeksForGeeks', True, green, blue)
 
 # Load and scale the image
 cube = pygame.image.load(IMAGE_PATH)
@@ -56,25 +55,31 @@ clock = pygame.time.Clock()
 feed = False
 key_pressed = False
 action_start_time = None
-action_duration = 6
+action_duration = 8
 action_active = False
 FPS = 60
 MAX_FOOD_ITEMS = 4
 ate = 0
-textRect = text.get_rect()
+generation_duration = 5
+current_generation = 1
  
 # set the center of the rectangular object.
-textRect.center = (50, 50)
 food_counts = [0] * len(positions)
 def add_food():
     if len(cloned_food) < MAX_FOOD_ITEMS:
         new_food_position = [random.randint(0, SCREEN_WIDTH - food_size[0]), random.randint(0, SCREEN_HEIGHT - food_size[1])]
         cloned_food.append((scaled_food.copy(), new_food_position))
+def speed_mutation():
+    SPEED = SPEED * 2
+    
+    
 
 # Main loop
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            atexit.register(print_results)
+
             pygame.quit()
             sys.exit()
 
@@ -116,7 +121,7 @@ while True:
         # Draw all cloned food items
         for food_image, food_pos in cloned_food:
             screen.blit(food_image, food_pos)
-        # below w
+        # below w do the calculations for eating food and adding the foodcount 
         for i in range(len(positions)):
             cube_x, cube_y = positions[i][0], positions[i][1]
             for food_image, food_pos in cloned_food:
@@ -125,7 +130,7 @@ while True:
                 threshold = 20
                 # below find if a cube has eaten
                 if distance < threshold:
-                    print("Food eaten at", food_pos)
+                    #print("Food eaten at", food_pos)
                     cloned_food.remove((food_image, food_pos))
                     print(f"Cube {i} ate food at", food_counts)
                     food_counts[i] += 1
@@ -150,16 +155,46 @@ while True:
                 positions[i][1] = SCREEN_HEIGHT - IMAGE_SIZE[1]
                 velocities[i][1] = -abs(velocities[i][1])
     if action_active:
+        # Time tracking for generations
         current_time = time.time()
         elapsed_time = current_time - action_start_time
+    
+        s = str(elapsed_time)
+        text = font.render(str(current_generation), True, green, blue)
+        textRect = text.get_rect()
+
+        textRect.center = (200, 50)
         screen.blit(text, textRect)
 
-        print(elapsed_time)
-
+        #print(elapsed_time)
+        # below we do all the stuff for the next generations
         if elapsed_time > action_duration:
-            action_active = False
-            feed = False
-            atexit.register(print_results)
+            #action_active = False
+            
+            current_generation += 1
+
+            dead_indices = []
+            living_indices = []
+            for i, count in enumerate(food_counts):
+                if food_counts[i] < 1:
+                    print(f"Cube {i} has died")
+                    dead_indices.append(i)
+                else:
+                    print(i, "lives on")
+                    living_indices.append(i)
+            for index in sorted(dead_indices, reverse=True):  # Remove in reverse order to avoid index shifting
+                del positions[index]
+                del velocities[index]
+                del food_counts[index]
+            
+
+                                
+            
+
+            
+            action_start_time = current_time
+            
+        
 
 
     for image, position in cloned_images:
