@@ -55,7 +55,7 @@ clock = pygame.time.Clock()
 feed = False
 key_pressed = False
 action_start_time = None
-action_duration = 8
+action_duration = 2
 action_active = False
 FPS = 60
 MAX_FOOD_ITEMS = 4
@@ -106,10 +106,9 @@ while True:
     screen.fill((0, 0, 0))
 
     # Draw the original images
-    screen.blit(scaled_cube, positions[0])
-    screen.blit(scaled1_cube, positions[1])
-    screen.blit(scaled2_cube, positions[2])
-    screen.blit(scaled3_cube, positions[3])
+    for i in range(len(positions)):
+        screen.blit(scaled_cube, positions[i])
+
     def print_results():
             for i, count in enumerate(food_counts):
                 print(f"Cube {i} ate {count} food items.")
@@ -170,10 +169,10 @@ while True:
         # below we do all the stuff for the next generations
         if elapsed_time > action_duration:
             #action_active = False
-            
+
             current_generation += 1
 
-            dead_indices = []
+            dead_indices = []   
             living_indices = []
             for i, count in enumerate(food_counts):
                 if food_counts[i] < 1:
@@ -181,22 +180,28 @@ while True:
                     dead_indices.append(i)
                 else:
                     print(i, "lives on")
-                    living_indices.append(i)
+                    living_indices.append(positions[i])
+                    
             for index in sorted(dead_indices, reverse=True):  # Remove in reverse order to avoid index shifting
                 del positions[index]
                 del velocities[index]
                 del food_counts[index]
-            
+            food_counts = [0] * len(positions)
+            for parent_position in living_indices:
+                for _ in range(2):  # Two offspring per surviving parent
+                    # Slightly randomize the position of the offspring
+                    offspring_position = [
+                        parent_position[0] + random.randint(-50, 50),
+                        parent_position[1] + random.randint(-50, 50)
+                    ]
+                    positions.append(offspring_position)
+                    velocities.append([random.uniform(-SPEED, SPEED), random.uniform(-SPEED, SPEED)])
+                    food_counts.append(0)  # Initialize food count for the new offspring
 
-                                
-            
 
             
             action_start_time = current_time
             
-        
-
-
     for image, position in cloned_images:
         screen.blit(image, position)
 
