@@ -4,15 +4,23 @@ import random
 import time
 import math
 import atexit 
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+
+
+
+
 # Initialize Pygame
 pygame.init()
 
 # Constants
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-IMAGE_PATH = '1000_F_506725496_kvJPVTdPAdmjHO6b9TOkHzm3Zqn5cILX-removebg-preview.png'
+IMAGE_PATH = 'png-transparent-binary-large-object-blob-s-leaf-grass-cartoon-thumbnail-removebg-preview.png'
 food_path = 'large_Poly_Orange_7579up_1471502253-removebg-preview.png'
-IMAGE_SIZE = (50, 50)
+IMAGE_SIZE = (55, 73)
 food_size = (20, 20)
 white = (255, 255, 255)
 green = (0, 255, 0)
@@ -35,7 +43,7 @@ scaled_food = pygame.transform.scale(food, food_size)
 # Initialize lists
 cloned_images = []
 cloned_food = []
-SPEED = 10
+SPEED = 7
 
 # Initial image position
 positions = [
@@ -58,30 +66,44 @@ action_start_time = None
 action_duration = 2
 action_active = False
 FPS = 60
-MAX_FOOD_ITEMS = 4
+MAX_FOOD_ITEMS = 8
 ate = 0
 generation_duration = 5
 current_generation = 1
- 
+penis = 0
+ # Create a figure and axis for the plot
+def plot_food():
+    generations = list(range(1, len(generation_food_data) + 1))
+    food_counts = generation_food_data
+    plt.xlabel("Generations")
+    plt.ylabel("Total Food Eaten")
+    plt.plot(generations, food_counts, marker='o', linestyle='-', color='b', label='Total Food Eaten')
+    plt.show()
+
 # set the center of the rectangular object.
 food_counts = [0] * len(positions)
+
 def add_food():
     if len(cloned_food) < MAX_FOOD_ITEMS:
         new_food_position = [random.randint(0, SCREEN_WIDTH - food_size[0]), random.randint(0, SCREEN_HEIGHT - food_size[1])]
         cloned_food.append((scaled_food.copy(), new_food_position))
-def speed_mutation():
-    SPEED = SPEED * 2
-    
-    
-
+        
+def speed_mutation(velocity):
+    speed_increase = 2
+    velocity[0] *= speed_increase
+    velocity[1] *= speed_increase
+generation_food_data = []
 # Main loop
 while True:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            atexit.register(print_results)
-
-            pygame.quit()
-            sys.exit()
+         if event.type == pygame.QUIT:
+                atexit.register(print_results)
+                plot_food()
+                s = False
+                
+        
+                pygame.quit()
+                sys.exit()
 
     keys = pygame.key.get_pressed()
     if keys[pygame.K_SPACE]:
@@ -108,13 +130,14 @@ while True:
     # Draw the original images
     for i in range(len(positions)):
         screen.blit(scaled_cube, positions[i])
-
+    
     def print_results():
-            for i, count in enumerate(food_counts):
+            for i, count in enumerate(food_counts.copy()):
                 print(f"Cube {i} ate {count} food items.")
 
     if feed:
         add_food()
+        
         # Function to print the results
         
         # Draw all cloned food items
@@ -159,7 +182,7 @@ while True:
         elapsed_time = current_time - action_start_time
     
         s = str(elapsed_time)
-        text = font.render(str(current_generation), True, green, blue)
+        text = font.render("Generations: "+str(current_generation), True, green, blue)
         textRect = text.get_rect()
 
         textRect.center = (200, 50)
@@ -168,6 +191,7 @@ while True:
         #print(elapsed_time)
         # below we do all the stuff for the next generations
         if elapsed_time > action_duration:
+            generation_food_data.append(sum(food_counts))
             #action_active = False
 
             current_generation += 1
@@ -194,17 +218,23 @@ while True:
                         parent_position[0] + random.randint(-50, 50),
                         parent_position[1] + random.randint(-50, 50)
                     ]
+                    new_velocity = ([random.uniform(-SPEED, SPEED), random.uniform(-SPEED, SPEED)])
+
+                    if random.randint(1,4) == 1:
+                        speed_mutation(new_velocity)
                     positions.append(offspring_position)
-                    velocities.append([random.uniform(-SPEED, SPEED), random.uniform(-SPEED, SPEED)])
+                    velocities.append(new_velocity)
                     food_counts.append(0)  # Initialize food count for the new offspring
-
-
             
             action_start_time = current_time
             
     for image, position in cloned_images:
         screen.blit(image, position)
+       
+   
 
+    print(penis)
+       
     clock.tick(FPS)
     
     pygame.display.flip()
