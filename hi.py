@@ -43,7 +43,7 @@ scaled_food = pygame.transform.scale(food, food_size)
 # Initialize lists
 cloned_images = []
 cloned_food = []
-SPEED = 7
+SPEED = 2
 
 # Initial image position
 positions = [
@@ -66,18 +66,29 @@ action_start_time = None
 action_duration = 2
 action_active = False
 FPS = 60
-MAX_FOOD_ITEMS = 8
+MAX_FOOD_ITEMS =  5
 ate = 0
 generation_duration = 5
 current_generation = 1
 penis = 0
  # Create a figure and axis for the plot
 def plot_food():
+    
     generations = list(range(1, len(generation_food_data) + 1))
     food_counts = generation_food_data
+    total_cubes = total_cube_data
+    total_speed = total_speed_data
     plt.xlabel("Generations")
     plt.ylabel("Total Food Eaten")
     plt.plot(generations, food_counts, marker='o', linestyle='-', color='b', label='Total Food Eaten')
+    plt.plot(generations, total_cubes, marker='o', linestyle='-', color='r', label='Total Cubes')
+    plt.plot(generations, total_speed, marker='o', linestyle='-', color='g', label='Total Speed Mutation')
+    plt.plot(generations, total_non_mutants, marker='o', linestyle='-', color='m', label='Total Non-Mutants')
+
+
+    plt.figtext(0.15, 0.83, "food eaten in blue, total cubes in red")
+
+
     plt.show()
 
 # set the center of the rectangular object.
@@ -89,15 +100,30 @@ def add_food():
         cloned_food.append((scaled_food.copy(), new_food_position))
         
 def speed_mutation(velocity):
-    speed_increase = 2
+    speed_increase = 10
     velocity[0] *= speed_increase
     velocity[1] *= speed_increase
 generation_food_data = []
+total_cube_data = []
+total_speed_data = []
+total_non_mutants = []
+non_mutants = 0
+
+mutations = [0] * len(positions) 
+initial_mutation_chance = 1/5
+offspring_muation_chance = 1/2
+mutation_chance = initial_mutation_chance
+
 # Main loop
 while True:
     for event in pygame.event.get():
          if event.type == pygame.QUIT:
                 atexit.register(print_results)
+                print("generation_food_data:", generation_food_data)
+                print("total_cube_data:", total_cube_data)
+                print("total_speed_data:", total_speed_data)
+                print("total_non_mutants:", total_non_mutants)
+
                 plot_food()
                 s = False
                 
@@ -133,7 +159,8 @@ while True:
     
     def print_results():
             for i, count in enumerate(food_counts.copy()):
-                print(f"Cube {i} ate {count} food items.")
+                #print(f"Cube {i} ate {count} food items.")
+                total_cubes = i
 
     if feed:
         add_food()
@@ -154,7 +181,7 @@ while True:
                 if distance < threshold:
                     #print("Food eaten at", food_pos)
                     cloned_food.remove((food_image, food_pos))
-                    print(f"Cube {i} ate food at", food_counts)
+                    #print(f"Cube {i} ate food at", food_counts)
                     food_counts[i] += 1
                     
                     add_food() # Optionally add more food
@@ -191,27 +218,40 @@ while True:
         #print(elapsed_time)
         # below we do all the stuff for the next generations
         if elapsed_time > action_duration:
-            generation_food_data.append(sum(food_counts))
+            # After each generation update (where new cubes are created and old cubes die)
+            non_mutants = sum(1 for mutation in mutations if mutation == 0)  # Correctly count non-mutants
+            mutants = sum(1 for mutation in mutations if mutation == 1)  # Correctly count mutants (speed mutations)
+
+            # Append the count to the appropriate lists
+            total_non_mutants.append(non_mutants)
+            total_speed_data.append(mutants)  # Track only the number of mutant cubes
+            total_cube_data.append(len(positions))  # This remains the same (total number of cubes)
+
+
+
             #action_active = False
 
             current_generation += 1
+            print(f"Total cubes: {len(positions)}, Mutants: {mutants}, Non-mutants: {non_mutants}")
+
 
             dead_indices = []   
             living_indices = []
             for i, count in enumerate(food_counts):
                 if food_counts[i] < 1:
-                    print(f"Cube {i} has died")
+                    #print(f"Cube {i} has died")
                     dead_indices.append(i)
                 else:
-                    print(i, "lives on")
+                    #print(i, "lives on")
                     living_indices.append(positions[i])
                     
             for index in sorted(dead_indices, reverse=True):  # Remove in reverse order to avoid index shifting
                 del positions[index]
                 del velocities[index]
                 del food_counts[index]
+                del mutations[index]
             food_counts = [0] * len(positions)
-            for parent_position in living_indices:
+            for parent_index, parent_position in enumerate(living_indices):
                 for _ in range(2):  # Two offspring per surviving parent
                     # Slightly randomize the position of the offspring
                     offspring_position = [
@@ -219,9 +259,19 @@ while True:
                         parent_position[1] + random.randint(-50, 50)
                     ]
                     new_velocity = ([random.uniform(-SPEED, SPEED), random.uniform(-SPEED, SPEED)])
-
-                    if random.randint(1,4) == 1:
+                    m = 0
+                    #mutation_chnace = 0.1
+                    if mutations[parent_index] == 1:
+                        mutation_chance = offspring_muation_chance
+                    if random.random() < mutation_chance:
+                        mutations.append(1)
                         speed_mutation(new_velocity)
+                        #print("speed gained")
+                    else:
+                        mutations.append(0)
+                        #print("none")
+                   #print(len(mutations))
+                        
                     positions.append(offspring_position)
                     velocities.append(new_velocity)
                     food_counts.append(0)  # Initialize food count for the new offspring
@@ -230,10 +280,11 @@ while True:
             
     for image, position in cloned_images:
         screen.blit(image, position)
+        #print(food_counts[i])
        
    
 
-    print(penis)
+    #print(penis)
        
     clock.tick(FPS)
     
