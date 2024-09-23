@@ -43,7 +43,8 @@ scaled_food = pygame.transform.scale(food, food_size)
 # Initialize lists
 cloned_images = []
 cloned_food = []
-SPEED = 2
+SPEED = 5
+
 
 # Initial image position
 positions = [
@@ -226,6 +227,7 @@ while True:
             total_non_mutants.append(non_mutants)
             total_speed_data.append(mutants)  # Track only the number of mutant cubes
             total_cube_data.append(len(positions))  # This remains the same (total number of cubes)
+            generation_food_data.append(sum(food_counts))
 
 
 
